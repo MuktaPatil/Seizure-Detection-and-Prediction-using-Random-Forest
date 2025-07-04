@@ -1,121 +1,74 @@
-# Seizure Detection and Prediction
-Seizure Detection from EEG data using Random Forest Pipelines
-http://www.kaggle.com/c/seizure-detection
+# 🧠 Seizure Detection and Prediction
+EEG-based Seizure Detection using Random Forest Pipelines
+Kaggle Challenge – Seizure Detection
 
+## 📄 Overview
+This project implements a pipeline to detect and predict epileptic seizures using EEG data. Leveraging Random Forest classifiers, we process .mat files representing brain signals from dogs and human patients, aiming to distinguish between ictal (seizure), interictal (non-seizure), and test phases.
 
+🏆 Based on data from a Kaggle competition, this work was also published as a research paper exploring machine learning techniques for biomedical time-series classification.
 
-### Packages
+## 🛠️ Environment & Dependencies
+Python: 2.7
 
- * python 2.7 with virtualenv
- * hickle==2.1.0
- * numpy==1.14.0
- * scikit-learn==0.19.1
- * scipy==1.0.0
+Virtual Environment: virtualenv
 
-### Installing dependencies
+Dependencies:
 
-Setup the virtualenv and install the dependencies
+hickle==2.1.0
 
+numpy==1.14.0
+
+scikit-learn==0.19.1
+
+scipy==1.0.0
+
+## 🔧 Installation
 ```
+-- Set up virtual environment
 virtualenv venv
-. venv/bin/activate
+source venv/bin/activate
+```
+
+Upgrade pip and install requirements
+```
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-## Train the model and make predictions
-
-Activate the virtualenv
+## 📁 Project Structure
+```
+seizure-detection/
+│
+├── seizure-data/             # EEG data directory (see below)
+│   ├── Dog_1/
+│   ├── Dog_2/
+│   └── ...
+│
+├── data-cache/               # Auto-generated: stores cached classifier and task results
+│
+├── submissions/              # Auto-generated: stores prediction submission files
+│
+├── SETTINGS.json             # Config file for paths
+├── train.py                  # Module to train Random Forest models
+├── predict.py                # Module to make predictions
+├── cross_validation.py       # Module for cross-validation evaluation
+└── seizure/                  # Core task logic
 
 ```
-. venv/bin/activate
-```
+## 📦 Data Preparation
 
-Obtain the competition data and place it in the root directory of the project.
+Place the EEG .mat files as shown below. The folder structure must match the entries in SETTINGS.json.
 ```
 seizure-data/
   Dog_1/
     Dog_1_ictal_segment_1.mat
-    Dog_1_ictal_segment_2.mat
-    ...
     Dog_1_interictal_segment_1.mat
-    Dog_1_interictal_segment_2.mat
-    ...
     Dog_1_test_segment_1.mat
-    Dog_1_test_segment_2.mat
     ...
-
   Dog_2/
   ...
 ```
-
-The directory name of the data should match the value in SETTINGS.json under the key `competition-data-dir`.
-
-Then simply run:
-```
-python -m train
-```
-
-One classifier is trained for each patient, and dumped to the data-cache directory.
-
-```
-data-cache/classifier_Dog_1_fft-with-time-freq-corr-1-48-r400-usf-gen1_rf3000mss1Bfrs0.pickle
-data-cache/classifier_Dog_2_fft-with-time-freq-corr-1-48-r400-usf-gen1_rf3000mss1Bfrs0.pickle
-...
-data-cache/classifier_Patient_8_fft-with-time-freq-corr-1-48-r400-usf-gen1_rf3000mss1Bfrs0.pickle
-```
-
-Although using these classifiers outside the scope of this project is not very straightforward.
-
-More convenient is to run the predict script.
-
-```
-python -m predict
-```
-
-This will take at least 2 hours. Feel free to update the classifier's `n_jobs` parameter
-in `seizure_detection.py`.
-
-A submission file will be created under the directory specified by the `submission-dir` key
-in `SETTINGS.json` (default `submissions/`).
-
-Predictions are made using the test segments found in the competition data directory. They
-are iterated over starting from 1 counting upwards until no file is found.
-
-i.e.
-```
-seizure-data/
-  Dog_1/
-    Dog_1_test_segment_1.mat
-    Dog_1_test_segment_2.mat
-    ...
-    Dog_1_test_segment_3181.mat
-```
-
-To make predictions on a new dataset, simply replace these test segments with new ones.
-The files must numbered sequentially starting from 1 otherwise it will not find all of
-the files.
-
-This project uses a custom task system which caches task results to disk using hickle format and
-falling back to pickle. First a task's output will be checked if it is in the data cache on disk,
-and if not the task will be executed and the data cached.
-
-See `seizure/tasks.py` for the custom tasks defined for this project. More specifically the
-`MakePredictionsTask` depends on `TrainClassifierTask`, which means `predict.py` will train
-and dump the classifiers as well as make predictions.
-
-## Run cross-validation
-
-```
-python -m cross_validation
-```
-
-Cross-validation set is obtained by splitting on entire seizures. For example if there are 4 seizures,
-3 seizures are used for training and 1 is used for cross-validation.
-
-
-## SETTINGS.json
-
+🧠 SETTINGS.json Sample
 ```
 {
   "competition-data-dir": "seizure-data",
@@ -123,13 +76,44 @@ Cross-validation set is obtained by splitting on entire seizures. For example if
   "submission-dir": "./submissions"
 }
 ```
+## 🚀 Training the Model
+Trains one classifier per patient (dog or human) using EEG features.
+```
+source venv/bin/activate
+python -m train
+```
+Models are saved in the data-cache/ directory as .pickle files.
 
-* `competition-data-dir`: directory containing the downloaded competition data
-* `data-cache-dir`: directory the task framework will store cached data
-* `submission-dir`: directory submissions are written to
+Example:
+data-cache/classifier_Dog_1_fft-with-time-freq-corr-1-48-r400-usf-gen1_rf3000mss1Bfrs0.pickle
 
+## 🔮 Making Predictions
+```
+python -m predict
+```
+Uses trained classifiers to predict labels on test segments.
 
+Predictions are saved in ./submissions/ (or wherever defined in SETTINGS.json).
 
+⚠️ Takes ~2 hours to run depending on the dataset size.
+
+To speed it up: edit the n_jobs parameter in seizure_detection.py to enable parallel processing.
+
+💡 You can swap out test segments to run predictions on a new dataset — just ensure files are sequentially numbered from 1 onward:
+
+```
+Dog_1_test_segment_1.mat
+Dog_1_test_segment_2.mat
+```
+
+## 🔁 Cross-Validation
+Performs leave-one-seizure-out validation:
+```
+python -m cross_validation
+```
+Each fold trains on n–1 seizures and tests on the held-out one.
+
+Gives a robust estimation of classifier generalization on unseen seizure events.
 
 
 
